@@ -19,6 +19,8 @@ const (
 	keycloakStartupCommand       = "start-dev"
 )
 
+// KeycloakContainer is a wrapper around testcontainers.Container
+// that provides some convenience methods for working with Keycloak.
 type KeycloakContainer struct {
 	testcontainers.Container
 
@@ -27,6 +29,7 @@ type KeycloakContainer struct {
 	contextPath string
 }
 
+// GetAdminClient returns an AdminClient for the KeycloakContainer.
 func (k *KeycloakContainer) GetAdminClient(ctx context.Context) (*AdminClient, error) {
 	authServerURL, err := k.GetAuthServerURL(ctx)
 	if err != nil {
@@ -35,6 +38,7 @@ func (k *KeycloakContainer) GetAdminClient(ctx context.Context) (*AdminClient, e
 	return NewAdminClient(&ctx, authServerURL, k.username, k.password)
 }
 
+// GetAuthServerURL returns the URL of the KeycloakContainer.
 func (k *KeycloakContainer) GetAuthServerURL(ctx context.Context) (string, error) {
 	host, err := k.Host(ctx)
 	if err != nil {
@@ -48,6 +52,7 @@ func (k *KeycloakContainer) GetAuthServerURL(ctx context.Context) (string, error
 	return fmt.Sprintf("http://%s:%s%s", host, port.Port(), k.contextPath), nil
 }
 
+// RunContainer starts a new KeycloakContainer with the given options.
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*KeycloakContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image: defaultKeycloakImage,
@@ -80,6 +85,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	}, nil
 }
 
+// WithRealmImportFile is option to import a realm file into KeycloakContainer.
 func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		absPath, err := filepath.Abs(filepath.Dir(realmImportFile))
@@ -100,6 +106,7 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 	}
 }
 
+// WithAdminUsername is option to set the admin username for KeycloakContainer.
 func WithAdminUsername(username string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		if username == "" {
@@ -109,6 +116,7 @@ func WithAdminUsername(username string) testcontainers.CustomizeRequestOption {
 	}
 }
 
+// WithAdminPassword is option to set the admin password for KeycloakContainer.
 func WithAdminPassword(password string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		if password == "" {
@@ -118,6 +126,7 @@ func WithAdminPassword(password string) testcontainers.CustomizeRequestOption {
 	}
 }
 
+// WithContextPath is option to set the context path for KeycloakContainer.
 func WithContextPath(contextPath string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		if contextPath == "" {

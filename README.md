@@ -1,4 +1,4 @@
-# Keycloak Testcontainer - [Testcontainers](https://www.testcontainers.org/) implementation for [Keycloak](https://www.keycloak.org/) SSO.
+# Keycloak Testcontainer - [testcontainers](https://www.testcontainers.org/) implementation for [Keycloak](https://www.keycloak.org/) SSO.
 
 [![Build Status](https://github.com/stillya/testcontainers-keycloak/actions/workflows/go.yml/badge.svg)](https://github.com/stillya/testcontainers-keycloak/actions/workflows/go.yml)
 [![Coverage](https://coveralls.io/repos/github/stillya/testcontainers-keycloak/badge.svg?branch=master)](https://coveralls.io/github/stillya/testcontainers-keycloak?branch=master)

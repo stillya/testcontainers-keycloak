@@ -13,6 +13,7 @@ const (
 	masterRealm   = "master"
 )
 
+// Token represents a Keycloak token.
 type Token struct {
 	AccessToken      string `json:"access_token"`
 	IDToken          string `json:"id_token"`
@@ -25,6 +26,7 @@ type Token struct {
 	Scope            string `json:"scope"`
 }
 
+// Client represents a Keycloak client(https://www.keycloak.org/docs-api/19.0.3/javadocs/org/keycloak/representations/idm/ClientRepresentation.html).
 type Client struct {
 	Access                             *map[string]interface{} `json:"access,omitempty"`
 	AdminURL                           *string                 `json:"adminUrl,omitempty"`
@@ -63,6 +65,7 @@ type Client struct {
 	WebOrigins                         *[]string               `json:"webOrigins,omitempty"`
 }
 
+// AdminClient is a Keycloak admin client.
 type AdminClient struct {
 	ServerURL string
 	Realm     string
@@ -74,6 +77,7 @@ type AdminClient struct {
 	client *http.Client
 }
 
+// NewAdminClient creates a new Keycloak admin client.
 func NewAdminClient(ctx *context.Context, serverURL, username, password string) (*AdminClient, error) {
 	adminClient := &AdminClient{
 		ServerURL: serverURL,
@@ -97,6 +101,7 @@ func NewAdminClient(ctx *context.Context, serverURL, username, password string) 
 	return adminClient, nil
 }
 
+// GetClient returns a Keycloak client.
 func (a *AdminClient) GetClient(realm string, clientID string) (*Client, error) {
 	token, err := a.getToken()
 	if err != nil {
@@ -154,6 +159,8 @@ func (a *AdminClient) getToken() (*Token, error) {
 	return &token, nil
 }
 
+// ClientContext returns a new context with the given HTTP client
+// Used to pass a custom HTTP client to the AdminClient
 func ClientContext(ctx context.Context, client *http.Client) context.Context {
 	return context.WithValue(ctx, http.Client{}, client)
 }
