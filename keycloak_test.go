@@ -15,16 +15,18 @@ const (
 	client   = "test-app"
 )
 
-func TestPostgres(t *testing.T) {
+func TestKeycloak(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name  string
-		image string
+		name   string
+		image  string
+		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:  "KeycloakV20",
-			image: "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV20CustomOption",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			option: WithCustomOption(),
 		},
 	}
 
@@ -32,6 +34,7 @@ func TestPostgres(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			container, err := RunContainer(ctx,
 				testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
+				tt.option,
 				WithContextPath("/auth"),
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
@@ -122,5 +125,62 @@ func TestKeycloakContainer_GetAdminClient(t *testing.T) {
 				return
 			}
 		})
+	}
+}
+
+func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name  string
+		image string
+	}{
+		{
+			name:  "KeycloakV20",
+			image: "quay.io/keycloak/keycloak:20.0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			container, err := RunContainer(ctx,
+				testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
+				WithContextPath("/auth"),
+				WithRealmImportFile("testdata/realm-export.json"),
+				WithAdminUsername(username),
+				WithAdminPassword(password),
+			)
+			if err != nil {
+				t.Errorf("RunContainer() error = %v", err)
+				return
+			}
+
+			t.Cleanup(func() {
+				err := container.Terminate(ctx)
+				if err != nil {
+					t.Errorf("Terminate() error = %v", err)
+					return
+				}
+			})
+
+			authServerURL, err := container.GetAuthServerURL(ctx)
+			if err != nil {
+				t.Errorf("GetAuthServerURL() error = %v", err)
+				return
+			}
+
+			port, _ := container.MappedPort(ctx, "8080/tcp")
+
+			if authServerURL != "http://localhost:"+port.Port()+"/auth" {
+				t.Errorf("GetAuthServerURL() error = %v", err)
+				return
+			}
+		})
+	}
+}
+
+func WithCustomOption() testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		req.Cmd = []string{"--health-enabled=false"}
 	}
 }

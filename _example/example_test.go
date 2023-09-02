@@ -1,19 +1,4 @@
-# Keycloak Testcontainer - [Testcontainers](https://www.testcontainers.org/) implementation for [Keycloak](https://www.keycloak.org/) SSO.
-
-* Native integration with [Testcontainers](https://www.testcontainers.org/).
-* Customization via `realm.json` to create custom realms, users, clients, etc.
-* Provides `AdminClient` to interact with Keycloak API.
-
-## Installation
-
-```bash
-go get github.com/stillya/testcontainers-keycloak
-```
-
-## Usage
-
-```go
-package main
+package _example
 
 import (
 	"context"
@@ -28,6 +13,20 @@ import (
 var keycloakContainer *keycloak.KeycloakContainer
 
 func Test_Example(t *testing.T) {
+	ctx := context.Background()
+
+	authServerURL, err := keycloakContainer.GetAuthServerURL(ctx)
+	if err != nil {
+		t.Errorf("GetAuthServerURL() error = %v", err)
+		return
+	}
+
+	fmt.Println(authServerURL)
+	// Output:
+	// http://localhost:32768/auth
+}
+
+func Test_AnotherExample(t *testing.T) {
 	ctx := context.Background()
 
 	authServerURL, err := keycloakContainer.GetAuthServerURL(ctx)
@@ -80,4 +79,3 @@ func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
 		keycloak.WithAdminPassword("admin"),
 	)
 }
-```

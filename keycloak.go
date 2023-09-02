@@ -86,6 +86,8 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 		if err != nil {
 			return
 		}
+		// We have to mount because go-testcontainers does not support copying files to the container when target directory does not exist yet.
+		// See this issue: https://github.com/testcontainers/testcontainers-go/issues/1336
 		importFile := testcontainers.ContainerMount{
 			Source: testcontainers.GenericBindMountSource{
 				HostPath: absPath,
