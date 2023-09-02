@@ -2,6 +2,7 @@
 
 [![Build Status](https://github.com/stillya/testcontainers-keycloak/actions/workflows/go.yml/badge.svg)](https://github.com/stillya/testcontainers-keycloak/actions/workflows/go.yml)
 [![Coverage](https://coveralls.io/repos/github/stillya/testcontainers-keycloak/badge.svg?branch=master)](https://coveralls.io/github/stillya/testcontainers-keycloak?branch=master)
+[![Go Reference](https://pkg.go.dev/badge/github.com/stillya/testcontainers-keycloak.svg)](https://pkg.go.dev/github.com/stillya/testcontainers-keycloak)
 
 * Native integration with [Testcontainers](https://www.testcontainers.org/).
 * Customization via `realm.json` to create custom realms, users, clients, etc.
