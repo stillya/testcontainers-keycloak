@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	keycloak "github.com/stillya/testcontainers-keycloak"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"os"
 	"testing"
 )
@@ -72,7 +70,6 @@ func shutDown() {
 
 func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
 	return keycloak.RunContainer(ctx,
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
 		keycloak.WithContextPath("/auth"),
 		keycloak.WithRealmImportFile("../testdata/realm-export.json"),
 		keycloak.WithAdminUsername("admin"),

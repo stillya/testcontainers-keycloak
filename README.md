@@ -7,6 +7,8 @@
 * Native integration with [Testcontainers](https://www.testcontainers.org/).
 * Customization via `realm.json` to create custom realms, users, clients, etc.
 * Provides `AdminClient` to interact with Keycloak API.
+* Customization via jar's providers.
+* TLS support.
 
 ## Installation
 
@@ -77,7 +79,6 @@ func shutDown() {
 
 func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
 	return keycloak.RunContainer(ctx,
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
 		keycloak.WithContextPath("/auth"),
 		keycloak.WithRealmImportFile("../testdata/realm-export.json"),
 		keycloak.WithAdminUsername("admin"),

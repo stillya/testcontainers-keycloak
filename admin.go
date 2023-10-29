@@ -2,6 +2,7 @@ package keycloak
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -88,7 +89,10 @@ func NewAdminClient(ctx *context.Context, serverURL, username, password string) 
 	}
 
 	if (*ctx).Value(http.Client{}) == nil {
-		adminClient.client = http.DefaultClient
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		adminClient.client = &http.Client{Transport: tr}
 	} else {
 		adminClient.client = (*ctx).Value(http.Client{}).(*http.Client)
 	}

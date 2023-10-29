@@ -2,8 +2,8 @@ package keycloak
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"net/http"
 	"testing"
 )
@@ -21,6 +21,7 @@ func TestKeycloak(t *testing.T) {
 	tests := []struct {
 		name   string
 		image  string
+		useTLS bool
 		option testcontainers.CustomizeRequestOption
 	}{
 		{
@@ -28,12 +29,17 @@ func TestKeycloak(t *testing.T) {
 			image:  "quay.io/keycloak/keycloak:20.0",
 			option: WithCustomOption(),
 		},
+		{
+			name:   "KeycloakV20WithTLS",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
+			useTLS: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			container, err := RunContainer(ctx,
-				testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
 				tt.option,
 				WithContextPath("/auth"),
 				WithRealmImportFile("testdata/realm-export.json"),
@@ -59,7 +65,11 @@ func TestKeycloak(t *testing.T) {
 				return
 			}
 
-			oidConfResp, err := http.Get(authServerURL + "/realms/" + realm + "/.well-known/openid-configuration")
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+			client := &http.Client{Transport: tr}
+			oidConfResp, err := client.Get(authServerURL + "/realms/" + realm + "/.well-known/openid-configuration")
 			if err != nil {
 				t.Errorf("http.Get() error = %v", err)
 				return
@@ -77,19 +87,29 @@ func TestKeycloakContainer_GetAdminClient(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name  string
-		image string
+		name   string
+		image  string
+		useTLS bool
+		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:  "KeycloakV20",
-			image: "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV20",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			useTLS: false,
+			option: WithCustomOption(),
+		},
+		{
+			name:   "KeycloakV20WithTLS",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
+			useTLS: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			container, err := RunContainer(ctx,
-				testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
+				tt.option,
 				WithContextPath("/auth"),
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
@@ -132,19 +152,28 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name  string
-		image string
+		name   string
+		image  string
+		useTLS bool
+		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:  "KeycloakV20",
-			image: "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV20",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			option: WithCustomOption(),
+		},
+		{
+			name:   "KeycloakV20WithTLS",
+			image:  "quay.io/keycloak/keycloak:20.0",
+			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
+			useTLS: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			container, err := RunContainer(ctx,
-				testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp")),
+				tt.option,
 				WithContextPath("/auth"),
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
@@ -169,11 +198,19 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 				return
 			}
 
-			port, _ := container.MappedPort(ctx, "8080/tcp")
-
-			if authServerURL != "http://localhost:"+port.Port()+"/auth" {
-				t.Errorf("GetAuthServerURL() error = %v", err)
+			if tt.useTLS {
+				port, err := container.MappedPort(ctx, keycloakHttpsPort)
+				if authServerURL != "https://localhost:"+port.Port()+"/auth" {
+					t.Errorf("GetAuthServerURL() error = %v", err)
+					return
+				}
 				return
+			} else {
+				port, err := container.MappedPort(ctx, keycloakPort)
+				if authServerURL != "http://localhost:"+port.Port()+"/auth" {
+					t.Errorf("GetAuthServerURL() error = %v", err)
+					return
+				}
 			}
 		})
 	}
