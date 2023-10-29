@@ -4,19 +4,25 @@ import (
 	"context"
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"path/filepath"
 )
 
 const (
 	defaultKeycloakImage         = "quay.io/keycloak/keycloak:20.0"
 	defaultRealmImport           = "/opt/keycloak/data/import/"
+	defaultProviders             = "/opt/keycloak/providers/"
+	tlsFilePath                  = "/opt/keycloak/conf"
 	defaultKeycloakAdminUsername = "admin"
 	defaultKeycloakAdminPassword = "admin"
 	defaultKeycloakContextPath   = "/"
 	keycloakAdminUsernameEnv     = "KEYCLOAK_ADMIN"
 	keycloakAdminPasswordEnv     = "KEYCLOAK_ADMIN_PASSWORD"
 	keycloakContextPathEnv       = "KEYCLOAK_CONTEXT_PATH"
+	keycloakTlsEnv               = "KEYCLOAK_TLS"
 	keycloakStartupCommand       = "start-dev"
+	keycloakPort                 = "8080/tcp"
+	keycloakHttpsPort            = "8443/tcp"
 )
 
 // KeycloakContainer is a wrapper around testcontainers.Container
@@ -26,6 +32,7 @@ type KeycloakContainer struct {
 
 	username    string
 	password    string
+	enableTLS   bool
 	contextPath string
 }
 
@@ -44,12 +51,19 @@ func (k *KeycloakContainer) GetAuthServerURL(ctx context.Context) (string, error
 	if err != nil {
 		return "", err
 	}
-	port, err := k.MappedPort(ctx, "8080")
-	if err != nil {
-		return "", err
+	if k.enableTLS {
+		port, err := k.MappedPort(ctx, keycloakHttpsPort)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("https://%s:%s%s", host, port.Port(), k.contextPath), nil
+	} else {
+		port, err := k.MappedPort(ctx, keycloakPort)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("http://%s:%s%s", host, port.Port(), k.contextPath), nil
 	}
-
-	return fmt.Sprintf("http://%s:%s%s", host, port.Port(), k.contextPath), nil
 }
 
 // RunContainer starts a new KeycloakContainer with the given options.
@@ -60,7 +74,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 			keycloakAdminUsernameEnv: defaultKeycloakAdminUsername,
 			keycloakAdminPasswordEnv: defaultKeycloakAdminPassword,
 		},
-		ExposedPorts: []string{"8080/tcp"},
+		ExposedPorts: []string{keycloakPort},
 	}
 
 	genericContainerReq := testcontainers.GenericContainerRequest{
@@ -70,6 +84,21 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 
 	for _, opt := range opts {
 		opt.Customize(&genericContainerReq)
+	}
+
+	if genericContainerReq.WaitingFor == nil {
+		contextPath := genericContainerReq.Env[keycloakContextPathEnv]
+		if contextPath == "" {
+			contextPath = defaultKeycloakContextPath
+		}
+		if genericContainerReq.Env[keycloakTlsEnv] != "" {
+			genericContainerReq.WaitingFor = wait.ForHTTP(contextPath).
+				WithPort(keycloakHttpsPort).
+				WithTLS(true).
+				WithAllowInsecure(true)
+		} else {
+			genericContainerReq.WaitingFor = wait.ForHTTP(contextPath)
+		}
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, genericContainerReq)
@@ -82,6 +111,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 		username:    genericContainerReq.Env[keycloakAdminUsernameEnv],
 		password:    genericContainerReq.Env[keycloakAdminPasswordEnv],
 		contextPath: genericContainerReq.Env[keycloakContextPathEnv],
+		enableTLS:   genericContainerReq.Env[keycloakTlsEnv] != "",
 	}, nil
 }
 
@@ -103,6 +133,54 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 		req.Mounts = append(req.Mounts, importFile)
 
 		processKeycloakArgs(req, []string{"--import-realm"})
+	}
+}
+
+// WithProviders is option to set the providers for KeycloakContainer.
+// Providers should be packaged ina Java Archive (JAR) file.
+// See https://www.keycloak.org/server/configuration-provider
+func WithProviders(providerFiles ...string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		for _, providerFile := range providerFiles {
+			absPath, err := filepath.Abs(filepath.Dir(providerFile))
+			if err != nil {
+				return
+			}
+			// We have to mount because go-testcontainers does not support copying files to the container when target directory does not exist yet.
+			// See this issue: https://github.com/testcontainers/testcontainers-go/issues/1336
+			importFile := testcontainers.ContainerMount{
+				Source: testcontainers.GenericBindMountSource{
+					HostPath: absPath,
+				},
+				Target: defaultProviders,
+			}
+			req.Mounts = append(req.Mounts, importFile)
+		}
+	}
+}
+
+// WithTLS is option to enable TLS for KeycloakContainer.
+func WithTLS(certFile, keyFile string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		req.ExposedPorts = []string{keycloakHttpsPort}
+		cf := testcontainers.ContainerFile{
+			HostFilePath:      certFile,
+			ContainerFilePath: tlsFilePath + "/tls.crt",
+			FileMode:          0o755,
+		}
+		kf := testcontainers.ContainerFile{
+			HostFilePath:      keyFile,
+			ContainerFilePath: tlsFilePath + "/tls.key",
+			FileMode:          0o755,
+		}
+
+		req.Files = append(req.Files, cf, kf)
+
+		req.Env[keycloakTlsEnv] = "true"
+		processKeycloakArgs(req,
+			[]string{"--https-certificate-file=" + tlsFilePath + "/tls.crt",
+				"--https-certificate-key-file=" + tlsFilePath + "/tls.key"},
+		)
 	}
 }
 
