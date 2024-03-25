@@ -92,12 +92,14 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 			contextPath = defaultKeycloakContextPath
 		}
 		if genericContainerReq.Env[keycloakTlsEnv] != "" {
-			genericContainerReq.WaitingFor = wait.ForHTTP(contextPath).
+			genericContainerReq.WaitingFor = wait.ForAll(wait.ForHTTP(contextPath).
 				WithPort(keycloakHttpsPort).
 				WithTLS(true).
-				WithAllowInsecure(true)
+				WithAllowInsecure(true),
+				wait.ForLog("Running the server"))
 		} else {
-			genericContainerReq.WaitingFor = wait.ForHTTP(contextPath)
+			genericContainerReq.WaitingFor = wait.ForAll(wait.ForHTTP(contextPath),
+				wait.ForLog("Running the server"))
 		}
 	}
 
