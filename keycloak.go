@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultKeycloakImage         = "quay.io/keycloak/keycloak:20.0"
+	defaultKeycloakImage         = "quay.io/keycloak/keycloak:24.0"
 	defaultRealmImport           = "/opt/keycloak/data/import/"
 	defaultProviders             = "/opt/keycloak/providers/"
 	tlsFilePath                  = "/opt/keycloak/conf"
@@ -120,19 +120,12 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 // WithRealmImportFile is option to import a realm file into KeycloakContainer.
 func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
-		absPath, err := filepath.Abs(filepath.Dir(realmImportFile))
-		if err != nil {
-			return
+		realmFile := testcontainers.ContainerFile{
+			HostFilePath:      realmImportFile,
+			ContainerFilePath: defaultRealmImport + filepath.Base(realmImportFile),
+			FileMode:          0o755,
 		}
-		// We have to mount because go-testcontainers does not support copying files to the container when target directory does not exist yet.
-		// See this issue: https://github.com/testcontainers/testcontainers-go/issues/1336
-		importFile := testcontainers.ContainerMount{
-			Source: testcontainers.GenericBindMountSource{
-				HostPath: absPath,
-			},
-			Target: defaultRealmImport,
-		}
-		req.Mounts = append(req.Mounts, importFile)
+		req.Files = append(req.Files, realmFile)
 
 		processKeycloakArgs(req, []string{"--import-realm"})
 	}
@@ -144,19 +137,12 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 func WithProviders(providerFiles ...string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		for _, providerFile := range providerFiles {
-			absPath, err := filepath.Abs(filepath.Dir(providerFile))
-			if err != nil {
-				return
+			provider := testcontainers.ContainerFile{
+				HostFilePath:      providerFile,
+				ContainerFilePath: defaultProviders + filepath.Base(providerFile),
+				FileMode:          0o755,
 			}
-			// We have to mount because go-testcontainers does not support copying files to the container when target directory does not exist yet.
-			// See this issue: https://github.com/testcontainers/testcontainers-go/issues/1336
-			importFile := testcontainers.ContainerMount{
-				Source: testcontainers.GenericBindMountSource{
-					HostPath: absPath,
-				},
-				Target: defaultProviders,
-			}
-			req.Mounts = append(req.Mounts, importFile)
+			req.Files = append(req.Files, provider)
 		}
 	}
 }

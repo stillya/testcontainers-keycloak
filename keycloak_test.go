@@ -25,13 +25,13 @@ func TestKeycloak(t *testing.T) {
 		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:   "KeycloakV20CustomOption",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24CustomOption",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			option: WithCustomOption(),
 		},
 		{
-			name:   "KeycloakV20WithTLS",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24WithTLS",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
 			useTLS: true,
 		},
@@ -45,6 +45,7 @@ func TestKeycloak(t *testing.T) {
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
 				WithAdminPassword(password),
+				testcontainers.WithImage(tt.image),
 			)
 			if err != nil {
 				t.Errorf("RunContainer() error = %v", err)
@@ -93,14 +94,14 @@ func TestKeycloakContainer_GetAdminClient(t *testing.T) {
 		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:   "KeycloakV20",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			useTLS: false,
 			option: WithCustomOption(),
 		},
 		{
-			name:   "KeycloakV20WithTLS",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24WithTLS",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
 			useTLS: true,
 		},
@@ -114,6 +115,7 @@ func TestKeycloakContainer_GetAdminClient(t *testing.T) {
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
 				WithAdminPassword(password),
+				testcontainers.WithImage(tt.image),
 			)
 			if err != nil {
 				t.Errorf("RunContainer() error = %v", err)
@@ -158,13 +160,13 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 		option testcontainers.CustomizeRequestOption
 	}{
 		{
-			name:   "KeycloakV20",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			option: WithCustomOption(),
 		},
 		{
-			name:   "KeycloakV20WithTLS",
-			image:  "quay.io/keycloak/keycloak:20.0",
+			name:   "KeycloakV24WithTLS",
+			image:  "quay.io/keycloak/keycloak:24.0",
 			option: WithTLS("testdata/tls.crt", "testdata/tls.key"),
 			useTLS: true,
 		},
@@ -178,6 +180,7 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
 				WithAdminPassword(password),
+				testcontainers.WithImage(tt.image),
 			)
 			if err != nil {
 				t.Errorf("RunContainer() error = %v", err)
