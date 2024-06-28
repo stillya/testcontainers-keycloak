@@ -75,6 +75,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 			keycloakAdminPasswordEnv: defaultKeycloakAdminPassword,
 		},
 		ExposedPorts: []string{keycloakPort},
+		Cmd:          []string{keycloakStartupCommand},
 	}
 
 	genericContainerReq := testcontainers.GenericContainerRequest{

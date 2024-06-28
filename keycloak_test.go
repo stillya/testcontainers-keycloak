@@ -41,6 +41,24 @@ func TestKeycloak(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			container, err := RunContainer(ctx,
 				tt.option,
+				testcontainers.WithImage(tt.image),
+			)
+			if err != nil {
+				t.Errorf("RunContainer() error = %v", err)
+			}
+
+			t.Cleanup(func() {
+				err := container.Terminate(ctx)
+				if err != nil {
+					t.Errorf("Terminate() error = %v", err)
+					return
+				}
+			})
+		})
+
+		t.Run(tt.name, func(t *testing.T) {
+			container, err := RunContainer(ctx,
+				tt.option,
 				WithContextPath("/auth"),
 				WithRealmImportFile("testdata/realm-export.json"),
 				WithAdminUsername(username),
@@ -221,6 +239,6 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 
 func WithCustomOption() testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
-		req.Cmd = []string{"--health-enabled=false"}
+		req.Cmd = append(req.Cmd, "--health-enabled=false")
 	}
 }
