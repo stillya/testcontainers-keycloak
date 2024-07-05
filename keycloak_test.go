@@ -3,9 +3,10 @@ package keycloak
 import (
 	"context"
 	"crypto/tls"
-	"github.com/testcontainers/testcontainers-go"
 	"net/http"
 	"testing"
+
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
@@ -238,7 +239,8 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 }
 
 func WithCustomOption() testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Cmd = append(req.Cmd, "--health-enabled=false")
+		return nil
 	}
 }
