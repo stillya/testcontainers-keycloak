@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	defaultKeycloakImage         = "quay.io/keycloak/keycloak:24.0"
 	defaultRealmImport           = "/opt/keycloak/data/import/"
 	defaultProviders             = "/opt/keycloak/providers/"
 	tlsFilePath                  = "/opt/keycloak/conf"
@@ -66,10 +65,12 @@ func (k *KeycloakContainer) GetAuthServerURL(ctx context.Context) (string, error
 	}
 }
 
-// RunContainer starts a new KeycloakContainer with the given options.
-func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*KeycloakContainer, error) {
+// Run starts a new KeycloakContainer with the given options.
+func Run(ctx context.Context, img string, opts ...testcontainers.ContainerCustomizer) (*KeycloakContainer, error) {
 	req := testcontainers.ContainerRequest{
-		Image: defaultKeycloakImage,
+		// TODO: Add custom container registry substitutor when this feature will be included in new testcontainers-go release
+		// https://github.com/testcontainers/testcontainers-go/pull/2647
+		Image: img,
 		Env: map[string]string{
 			keycloakAdminUsernameEnv: defaultKeycloakAdminUsername,
 			keycloakAdminPasswordEnv: defaultKeycloakAdminPassword,
@@ -84,7 +85,9 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	}
 
 	for _, opt := range opts {
-		opt.Customize(&genericContainerReq)
+		if err := opt.Customize(&genericContainerReq); err != nil {
+			return nil, err
+		}
 	}
 
 	if genericContainerReq.WaitingFor == nil {
@@ -120,7 +123,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 
 // WithRealmImportFile is option to import a realm file into KeycloakContainer.
 func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		realmFile := testcontainers.ContainerFile{
 			HostFilePath:      realmImportFile,
 			ContainerFilePath: defaultRealmImport + filepath.Base(realmImportFile),
@@ -129,6 +132,8 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 		req.Files = append(req.Files, realmFile)
 
 		processKeycloakArgs(req, []string{"--import-realm"})
+
+		return nil
 	}
 }
 
@@ -136,7 +141,7 @@ func WithRealmImportFile(realmImportFile string) testcontainers.CustomizeRequest
 // Providers should be packaged ina Java Archive (JAR) file.
 // See https://www.keycloak.org/server/configuration-provider
 func WithProviders(providerFiles ...string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		for _, providerFile := range providerFiles {
 			provider := testcontainers.ContainerFile{
 				HostFilePath:      providerFile,
@@ -145,12 +150,14 @@ func WithProviders(providerFiles ...string) testcontainers.CustomizeRequestOptio
 			}
 			req.Files = append(req.Files, provider)
 		}
+
+		return nil
 	}
 }
 
 // WithTLS is option to enable TLS for KeycloakContainer.
 func WithTLS(certFile, keyFile string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.ExposedPorts = []string{keycloakHttpsPort}
 		cf := testcontainers.ContainerFile{
 			HostFilePath:      certFile,
@@ -170,37 +177,45 @@ func WithTLS(certFile, keyFile string) testcontainers.CustomizeRequestOption {
 			[]string{"--https-certificate-file=" + tlsFilePath + "/tls.crt",
 				"--https-certificate-key-file=" + tlsFilePath + "/tls.key"},
 		)
+
+		return nil
 	}
 }
 
 // WithAdminUsername is option to set the admin username for KeycloakContainer.
 func WithAdminUsername(username string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if username == "" {
 			username = defaultKeycloakAdminUsername
 		}
 		req.Env[keycloakAdminUsernameEnv] = username
+
+		return nil
 	}
 }
 
 // WithAdminPassword is option to set the admin password for KeycloakContainer.
 func WithAdminPassword(password string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if password == "" {
 			password = defaultKeycloakAdminPassword
 		}
 		req.Env[keycloakAdminPasswordEnv] = password
+
+		return nil
 	}
 }
 
 // WithContextPath is option to set the context path for KeycloakContainer.
 func WithContextPath(contextPath string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if contextPath == "" {
 			contextPath = defaultKeycloakContextPath
 		}
 		req.Env[keycloakContextPathEnv] = contextPath
 		processKeycloakArgs(req, []string{"--http-relative-path=" + contextPath})
+
+		return nil
 	}
 }
 
