@@ -68,9 +68,10 @@ func (k *KeycloakContainer) GetAuthServerURL(ctx context.Context) (string, error
 // Run starts a new KeycloakContainer with the given options.
 func Run(ctx context.Context, img string, opts ...testcontainers.ContainerCustomizer) (*KeycloakContainer, error) {
 	req := testcontainers.ContainerRequest{
-		// TODO: Add custom container registry substitutor when this feature will be included in new testcontainers-go release
-		// https://github.com/testcontainers/testcontainers-go/pull/2647
 		Image: img,
+		ImageSubstitutors: []testcontainers.ImageSubstitutor{
+			testcontainers.NewCustomHubSubstitutor("quay.io"),
+		},
 		Env: map[string]string{
 			keycloakAdminUsernameEnv: defaultKeycloakAdminUsername,
 			keycloakAdminPasswordEnv: defaultKeycloakAdminPassword,
