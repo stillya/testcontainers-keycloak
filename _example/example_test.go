@@ -70,7 +70,7 @@ func shutDown() {
 
 func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
 	return keycloak.Run(ctx,
-		"quay.io/keycloak/keycloak:24.0",
+		"keycloak/keycloak:24.0",
 		keycloak.WithContextPath("/auth"),
 		keycloak.WithRealmImportFile("../testdata/realm-export.json"),
 		keycloak.WithAdminUsername("admin"),
