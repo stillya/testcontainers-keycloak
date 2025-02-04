@@ -61,13 +61,7 @@ func TestKeycloak(t *testing.T) {
 				return
 			}
 
-			t.Cleanup(func() {
-				err := container.Terminate(ctx)
-				if err != nil {
-					t.Errorf("Terminate() error = %v", err)
-					return
-				}
-			})
+			testcontainers.CleanupContainer(t, container)
 		})
 	}
 }
@@ -117,13 +111,8 @@ func TestKeycloakWithOptions(t *testing.T) {
 				return
 			}
 
-			t.Cleanup(func() {
-				err := container.Terminate(ctx)
-				if err != nil {
-					t.Errorf("Terminate() error = %v", err)
-					return
-				}
-			})
+			testcontainers.CleanupContainer(t, container)
+
 			authServerURL, err := container.GetAuthServerURL(ctx)
 			if err != nil {
 				t.Errorf("GetAuthServerURL() error = %v", err)
@@ -194,13 +183,7 @@ func TestKeycloakContainer_GetAdminClient(t *testing.T) {
 				return
 			}
 
-			t.Cleanup(func() {
-				err := container.Terminate(ctx)
-				if err != nil {
-					t.Errorf("Terminate() error = %v", err)
-					return
-				}
-			})
+			testcontainers.CleanupContainer(t, container)
 
 			adminClient, err := container.GetAdminClient(ctx)
 			if err != nil {
@@ -264,13 +247,7 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 				return
 			}
 
-			t.Cleanup(func() {
-				err := container.Terminate(ctx)
-				if err != nil {
-					t.Errorf("Terminate() error = %v", err)
-					return
-				}
-			})
+			testcontainers.CleanupContainer(t, container)
 
 			authServerURL, err := container.GetAuthServerURL(ctx)
 			if err != nil {
