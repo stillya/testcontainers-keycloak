@@ -25,8 +25,6 @@ import (
 	"context"
 	"fmt"
 	keycloak "github.com/stillya/testcontainers-keycloak"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"os"
 	"testing"
 )
