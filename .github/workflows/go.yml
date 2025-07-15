@@ -5,33 +5,32 @@ name: Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
-
   Build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Test
-      run: |
-        go test -race -covermode atomic -coverprofile=covprofile ./...
+      - name: Test
+        run: |
+          go test -race -covermode atomic -coverprofile=covprofile ./...
 
-    - name: Coverage
-      run: |
-        go install github.com/mattn/goveralls@latest
-        goveralls -coverprofile=covprofile -service=github -v -repotoken $COVERALLS_TOKEN
-      env:
-        COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Coverage
+        run: |
+          go install github.com/mattn/goveralls@latest
+          goveralls -coverprofile=covprofile -service=github -v -repotoken $COVERALLS_TOKEN
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
