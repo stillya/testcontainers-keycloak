@@ -5,7 +5,6 @@ updates:
   - /
   schedule:
     interval: monthly
-    day: saturday
   open-pull-requests-limit: 3
   rebase-strategy: disabled
 - package-ecosystem: gomod
@@ -13,6 +12,5 @@ updates:
   - /
   schedule:
     interval: monthly
-    day: saturday
   open-pull-requests-limit: 3
   rebase-strategy: disabled
