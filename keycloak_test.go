@@ -3,10 +3,11 @@ package keycloak
 import (
 	"context"
 	"crypto/tls"
-	"github.com/testcontainers/testcontainers-go"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
@@ -26,12 +27,12 @@ func TestKeycloak(t *testing.T) {
 		envs   map[string]string
 	}{
 		{
-			name:  "KeycloakV24Basic",
-			image: "keycloak/keycloak:24.0",
+			name:  "KeycloakV26Basic",
+			image: "keycloak/keycloak:26.0",
 		},
 		{
-			name:  "KeycloakV24BasicWithCustomHub",
-			image: "keycloak/keycloak:24.0",
+			name:  "KeycloakV26BasicWithCustomHub",
+			image: "keycloak/keycloak:26.0",
 			envs: map[string]string{
 				"TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX": "quay.io",
 			},
@@ -89,6 +90,29 @@ func TestKeycloakWithOptions(t *testing.T) {
 		{
 			name:  "KeycloakV24WithTLS",
 			image: "keycloak/keycloak:24.0",
+			options: []testcontainers.ContainerCustomizer{
+				WithTLS("testdata/tls.crt", "testdata/tls.key"),
+				WithContextPath("/auth"),
+				WithRealmImportFile("testdata/realm-export.json"),
+				WithAdminUsername(username),
+				WithAdminPassword(password),
+			},
+			useTLS: true,
+		},
+		{
+			name:  "KeycloakV26WithCustomOption",
+			image: "keycloak/keycloak:26.0",
+			options: []testcontainers.ContainerCustomizer{
+				WithCustomOption(),
+				WithContextPath("/auth"),
+				WithRealmImportFile("testdata/realm-export.json"),
+				WithAdminUsername(username),
+				WithAdminPassword(password),
+			},
+		},
+		{
+			name:  "KeycloakV26WithTLS",
+			image: "keycloak/keycloak:26.0",
 			options: []testcontainers.ContainerCustomizer{
 				WithTLS("testdata/tls.crt", "testdata/tls.key"),
 				WithContextPath("/auth"),

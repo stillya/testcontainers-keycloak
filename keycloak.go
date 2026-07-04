@@ -3,25 +3,28 @@ package keycloak
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"path/filepath"
 )
 
 const (
-	defaultRealmImport           = "/opt/keycloak/data/import/"
-	defaultProviders             = "/opt/keycloak/providers/"
-	tlsFilePath                  = "/opt/keycloak/conf"
-	defaultKeycloakAdminUsername = "admin"
-	defaultKeycloakAdminPassword = "admin"
-	defaultKeycloakContextPath   = "/"
-	keycloakAdminUsernameEnv     = "KEYCLOAK_ADMIN"
-	keycloakAdminPasswordEnv     = "KEYCLOAK_ADMIN_PASSWORD"
-	keycloakContextPathEnv       = "KEYCLOAK_CONTEXT_PATH"
-	keycloakTlsEnv               = "KEYCLOAK_TLS"
-	keycloakStartupCommand       = "start-dev"
-	keycloakPort                 = "8080/tcp"
-	keycloakHttpsPort            = "8443/tcp"
+	defaultRealmImport                = "/opt/keycloak/data/import/"
+	defaultProviders                  = "/opt/keycloak/providers/"
+	tlsFilePath                       = "/opt/keycloak/conf"
+	defaultKeycloakAdminUsername      = "admin"
+	defaultKeycloakAdminPassword      = "admin"
+	defaultKeycloakContextPath        = "/"
+	keycloakAdminUsernameEnv          = "KEYCLOAK_ADMIN" // NOTE: deprecated in 26.x
+	keycloakAdminBootstrapUsernameEnv = "KC_BOOTSTRAP_ADMIN_USERNAME"
+	keycloakAdminPasswordEnv          = "KEYCLOAK_ADMIN_PASSWORD" // NOTE: deprecated in 26.x
+	keycloakAdminBootstrapPasswordEnv = "KC_BOOTSTRAP_ADMIN_PASSWORD"
+	keycloakContextPathEnv            = "KEYCLOAK_CONTEXT_PATH"
+	keycloakTlsEnv                    = "KEYCLOAK_TLS"
+	keycloakStartupCommand            = "start-dev"
+	keycloakPort                      = "8080/tcp"
+	keycloakHttpsPort                 = "8443/tcp"
 )
 
 // KeycloakContainer is a wrapper around testcontainers.Container
@@ -73,8 +76,10 @@ func Run(ctx context.Context, img string, opts ...testcontainers.ContainerCustom
 			testcontainers.NewCustomHubSubstitutor("quay.io"),
 		},
 		Env: map[string]string{
-			keycloakAdminUsernameEnv: defaultKeycloakAdminUsername,
-			keycloakAdminPasswordEnv: defaultKeycloakAdminPassword,
+			keycloakAdminUsernameEnv:          defaultKeycloakAdminUsername,
+			keycloakAdminBootstrapUsernameEnv: defaultKeycloakAdminUsername,
+			keycloakAdminPasswordEnv:          defaultKeycloakAdminPassword,
+			keycloakAdminBootstrapPasswordEnv: defaultKeycloakAdminPassword,
 		},
 		ExposedPorts: []string{keycloakPort},
 		Cmd:          []string{keycloakStartupCommand},
@@ -189,7 +194,8 @@ func WithAdminUsername(username string) testcontainers.CustomizeRequestOption {
 		if username == "" {
 			username = defaultKeycloakAdminUsername
 		}
-		req.Env[keycloakAdminUsernameEnv] = username
+		req.Env[keycloakAdminUsernameEnv] = username 
+		req.Env[keycloakAdminBootstrapUsernameEnv] = username
 
 		return nil
 	}
@@ -202,6 +208,7 @@ func WithAdminPassword(password string) testcontainers.CustomizeRequestOption {
 			password = defaultKeycloakAdminPassword
 		}
 		req.Env[keycloakAdminPasswordEnv] = password
+		req.Env[keycloakAdminBootstrapPasswordEnv] = password
 
 		return nil
 	}
