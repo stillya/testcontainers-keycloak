@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -23,6 +24,7 @@ const (
 	keycloakContextPathEnv            = "KEYCLOAK_CONTEXT_PATH"
 	keycloakTlsEnv                    = "KEYCLOAK_TLS"
 	keycloakStartupCommand            = "start-dev"
+	keycloakProductionCommand         = "start"
 	keycloakPort                      = "8080/tcp"
 	keycloakHttpsPort                 = "8443/tcp"
 )
@@ -194,7 +196,7 @@ func WithAdminUsername(username string) testcontainers.CustomizeRequestOption {
 		if username == "" {
 			username = defaultKeycloakAdminUsername
 		}
-		req.Env[keycloakAdminUsernameEnv] = username 
+		req.Env[keycloakAdminUsernameEnv] = username
 		req.Env[keycloakAdminBootstrapUsernameEnv] = username
 
 		return nil
@@ -228,15 +230,10 @@ func WithContextPath(contextPath string) testcontainers.CustomizeRequestOption {
 }
 
 func processKeycloakArgs(req *testcontainers.GenericContainerRequest, args []string) {
-	if len(req.Cmd) == 0 {
-		req.Cmd = append([]string{keycloakStartupCommand}, args...)
-		return
-	}
-
-	if req.Cmd[0] == keycloakStartupCommand {
-		req.Cmd = append(req.Cmd, args...)
-	} else if req.Cmd[0] != keycloakStartupCommand {
+	hasStartCommand := slices.Contains(req.Cmd, keycloakStartupCommand) ||
+		slices.Contains(req.Cmd, keycloakProductionCommand)
+	if !hasStartCommand {
 		req.Cmd = append([]string{keycloakStartupCommand}, req.Cmd...)
-		req.Cmd = append(req.Cmd, args...)
 	}
+	req.Cmd = append(req.Cmd, args...)
 }

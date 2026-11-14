@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -292,6 +293,59 @@ func TestKeycloakContainer_GetAuthServerURL(t *testing.T) {
 					t.Errorf("GetAuthServerURL() error = %v", err)
 					return
 				}
+			}
+		})
+	}
+}
+
+func TestProcessKeycloakArgs(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  []string
+		want []string
+	}{
+		{
+			name: "EmptyCmd",
+			cmd:  nil,
+			want: []string{"start-dev", "--import-realm"},
+		},
+		{
+			name: "DevMode",
+			cmd:  []string{"start-dev"},
+			want: []string{"start-dev", "--import-realm"},
+		},
+		{
+			name: "ProductionMode",
+			cmd:  []string{"start"},
+			want: []string{"start", "--import-realm"},
+		},
+		{
+			name: "ProductionModeWithOptimized",
+			cmd:  []string{"start", "--optimized"},
+			want: []string{"start", "--optimized", "--import-realm"},
+		},
+		{
+			name: "GlobalOptionBeforeCommand",
+			cmd:  []string{"--verbose", "start"},
+			want: []string{"--verbose", "start", "--import-realm"},
+		},
+		{
+			name: "OptionsWithoutCommand",
+			cmd:  []string{"--health-enabled=false"},
+			want: []string{"start-dev", "--health-enabled=false", "--import-realm"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &testcontainers.GenericContainerRequest{
+				ContainerRequest: testcontainers.ContainerRequest{Cmd: tt.cmd},
+			}
+
+			processKeycloakArgs(req, []string{"--import-realm"})
+
+			if !slices.Equal(req.Cmd, tt.want) {
+				t.Errorf("processKeycloakArgs() cmd = %v, want %v", req.Cmd, tt.want)
 			}
 		})
 	}
